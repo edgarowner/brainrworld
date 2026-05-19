@@ -12,6 +12,7 @@ const TOWN_H = 1122;
 const BLOCKY_STRAWBERRY_AVATAR_KEY = "player-strawberry-elephant-blocky";
 const BLOCKY_DRAGON_AVATAR_KEY = "dragon-cannelloni-blocky";
 const DRAGON_FIRE_KEY = "dragon-cannelloni-fire";
+const assetPath = (path) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, "")}`;
 
 const COLORS = {
   water: "#75cfe6",
@@ -1012,45 +1013,45 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("townMap", "/assets/maps/town-map.png");
-    this.load.image("southVillageMap", "/assets/maps/south-village-map.png");
-    this.load.image("interiorBlueHome", "/assets/interiors/casa-azul-arriba-izquierda.png");
-    this.load.image("interiorRedHome", "/assets/interiors/casa-roja-arriba-centro.png");
-    this.load.image("interiorGreenHome", "/assets/interiors/casa-verde-centro.png");
-    this.load.image("interiorPurpleShop", "/assets/interiors/tienda-morada-centro-derecha.png");
-    this.load.image("interiorYellowHome", "/assets/interiors/casa-amarilla-abajo-izquierda.png");
-    this.load.image("interiorHealCenter", "/assets/interiors/centro-curacion.png");
-    this.load.image("interiorPurpleHome", "/assets/interiors/casa-morada-abajo-derecha.png");
-    this.load.image("southInteriorBlueHome", "/assets/interiors/south-blue-home.png");
-    this.load.image("southInteriorRedShop", "/assets/interiors/south-red-shop.png");
-    this.load.image("southInteriorClinic", "/assets/interiors/south-clinic.png");
-    this.load.image("southInteriorPurpleShop", "/assets/interiors/south-purple-shop.png");
-    this.load.image("southInteriorYellowHome", "/assets/interiors/south-yellow-home.png");
-    this.load.image("southInteriorGreenHome", "/assets/interiors/south-green-home.png");
-    this.load.image("na-floor", "/assets/ninja/tilesets/TilesetFloor.png");
-    this.load.image("na-water", "/assets/ninja/tilesets/TilesetWater.png");
-    this.load.image("na-nature", "/assets/ninja/tilesets/TilesetNature.png");
-    this.load.image("na-element", "/assets/ninja/tilesets/TilesetElement.png");
-    this.load.spritesheet("player", "/assets/characters/brainworld/joven-gorra-azul.png", { frameWidth: 64, frameHeight: 72 });
-    this.load.spritesheet("npcPink", "/assets/characters/brainworld/nina-lazo.png", { frameWidth: 64, frameHeight: 72 });
-    this.load.spritesheet("npcBlue", "/assets/characters/brainworld/mujer-recogido.png", { frameWidth: 64, frameHeight: 72 });
-    this.load.spritesheet("npcKid", "/assets/characters/brainworld/nino-gorra-verde.png", { frameWidth: 64, frameHeight: 72 });
-    this.load.spritesheet("npcHiker", "/assets/characters/brainworld/explorador.png", { frameWidth: 64, frameHeight: 72 });
-    this.load.image("brainrot-strawberry-elephant-front", "/assets/brainrots/strawberryelephant-front.webp");
-    this.load.image("brainrot-strawberry-elephant-back", "/assets/brainrots/strawberryelephant-back.png");
-    this.load.image("brainrot-dragon-canneloni-front", "/assets/brainrots/dragon-canneloni-front.png");
-    this.load.image("brainrot-dragon-canneloni-back", "/assets/brainrots/dragon-canneloni-back.png");
-    this.load.image("brainrot-tralalero-tralala-front", "/assets/brainrots/tralalero-tralala-front.png");
-    this.load.image("brainrot-bombardiro-crocodilo-front", "/assets/brainrots/bombardiro-crocodilo-front.png");
-    this.load.image("brainrot-brr-brr-patapim-front", "/assets/brainrots/brr-brr-patapim-front.png");
-    this.load.image("brainrot-cappuccino-assassino-front", "/assets/brainrots/cappuccino-assassino-front.png");
-    this.load.image("brainrot-lirili-larila-front", "/assets/brainrots/lirili-larila-front.png");
-    this.load.image("brainrot-skibidi-toilet-front", "/assets/brainrots/skibidi-toilet-front.png");
-    this.load.image("brainrot-tung-tung-tung-sahur-front", "/assets/brainrots/tung-tung-tung-sahur-front.png");
-    this.load.image("brainrot-ballerina-cappuccina-front", "/assets/brainrots/ballerina-cappuccina-front.png");
-    this.load.image("brainrot-chimpanzini-bananini-front", "/assets/brainrots/chimpanzini-bananini-front.png");
-    this.load.image("brainrot-bombombini-gusini-front", "/assets/brainrots/bombombini-gusini-front.png");
-    this.load.image("brainrot-garama-and-madundung-front", "/assets/brainrots/garama-and-madundung-front.png");
+    this.load.image("townMap", assetPath("assets/maps/town-map.png"));
+    this.load.image("southVillageMap", assetPath("assets/maps/south-village-map.png"));
+    this.load.image("interiorBlueHome", assetPath("assets/interiors/casa-azul-arriba-izquierda.png"));
+    this.load.image("interiorRedHome", assetPath("assets/interiors/casa-roja-arriba-centro.png"));
+    this.load.image("interiorGreenHome", assetPath("assets/interiors/casa-verde-centro.png"));
+    this.load.image("interiorPurpleShop", assetPath("assets/interiors/tienda-morada-centro-derecha.png"));
+    this.load.image("interiorYellowHome", assetPath("assets/interiors/casa-amarilla-abajo-izquierda.png"));
+    this.load.image("interiorHealCenter", assetPath("assets/interiors/centro-curacion.png"));
+    this.load.image("interiorPurpleHome", assetPath("assets/interiors/casa-morada-abajo-derecha.png"));
+    this.load.image("southInteriorBlueHome", assetPath("assets/interiors/south-blue-home.png"));
+    this.load.image("southInteriorRedShop", assetPath("assets/interiors/south-red-shop.png"));
+    this.load.image("southInteriorClinic", assetPath("assets/interiors/south-clinic.png"));
+    this.load.image("southInteriorPurpleShop", assetPath("assets/interiors/south-purple-shop.png"));
+    this.load.image("southInteriorYellowHome", assetPath("assets/interiors/south-yellow-home.png"));
+    this.load.image("southInteriorGreenHome", assetPath("assets/interiors/south-green-home.png"));
+    this.load.image("na-floor", assetPath("assets/ninja/tilesets/TilesetFloor.png"));
+    this.load.image("na-water", assetPath("assets/ninja/tilesets/TilesetWater.png"));
+    this.load.image("na-nature", assetPath("assets/ninja/tilesets/TilesetNature.png"));
+    this.load.image("na-element", assetPath("assets/ninja/tilesets/TilesetElement.png"));
+    this.load.spritesheet("player", assetPath("assets/characters/brainworld/joven-gorra-azul.png"), { frameWidth: 64, frameHeight: 72 });
+    this.load.spritesheet("npcPink", assetPath("assets/characters/brainworld/nina-lazo.png"), { frameWidth: 64, frameHeight: 72 });
+    this.load.spritesheet("npcBlue", assetPath("assets/characters/brainworld/mujer-recogido.png"), { frameWidth: 64, frameHeight: 72 });
+    this.load.spritesheet("npcKid", assetPath("assets/characters/brainworld/nino-gorra-verde.png"), { frameWidth: 64, frameHeight: 72 });
+    this.load.spritesheet("npcHiker", assetPath("assets/characters/brainworld/explorador.png"), { frameWidth: 64, frameHeight: 72 });
+    this.load.image("brainrot-strawberry-elephant-front", assetPath("assets/brainrots/strawberryelephant-front.webp"));
+    this.load.image("brainrot-strawberry-elephant-back", assetPath("assets/brainrots/strawberryelephant-back.png"));
+    this.load.image("brainrot-dragon-canneloni-front", assetPath("assets/brainrots/dragon-canneloni-front.png"));
+    this.load.image("brainrot-dragon-canneloni-back", assetPath("assets/brainrots/dragon-canneloni-back.png"));
+    this.load.image("brainrot-tralalero-tralala-front", assetPath("assets/brainrots/tralalero-tralala-front.png"));
+    this.load.image("brainrot-bombardiro-crocodilo-front", assetPath("assets/brainrots/bombardiro-crocodilo-front.png"));
+    this.load.image("brainrot-brr-brr-patapim-front", assetPath("assets/brainrots/brr-brr-patapim-front.png"));
+    this.load.image("brainrot-cappuccino-assassino-front", assetPath("assets/brainrots/cappuccino-assassino-front.png"));
+    this.load.image("brainrot-lirili-larila-front", assetPath("assets/brainrots/lirili-larila-front.png"));
+    this.load.image("brainrot-skibidi-toilet-front", assetPath("assets/brainrots/skibidi-toilet-front.png"));
+    this.load.image("brainrot-tung-tung-tung-sahur-front", assetPath("assets/brainrots/tung-tung-tung-sahur-front.png"));
+    this.load.image("brainrot-ballerina-cappuccina-front", assetPath("assets/brainrots/ballerina-cappuccina-front.png"));
+    this.load.image("brainrot-chimpanzini-bananini-front", assetPath("assets/brainrots/chimpanzini-bananini-front.png"));
+    this.load.image("brainrot-bombombini-gusini-front", assetPath("assets/brainrots/bombombini-gusini-front.png"));
+    this.load.image("brainrot-garama-and-madundung-front", assetPath("assets/brainrots/garama-and-madundung-front.png"));
   }
 
   create() {
@@ -3080,6 +3081,19 @@ class BrainworldScene extends Phaser.Scene {
     return this.mapNpcs?.find((npc) => npc.battleEnemyName === "Dragon Cannelloni") ?? null;
   }
 
+  prepareMapSpawnContext(eventName) {
+    if (this.inBattle) return false;
+    if (this.locationMode === "interior") this.leaveInterior();
+    if (!this.isMapMode()) {
+      this.setMapZone("overworld", { playerX: 717, playerY: 800, direction: "down" });
+    }
+    if (!this.isMapMode()) {
+      this.showToast(eventName, "Go outside to spawn this brainrot.");
+      return false;
+    }
+    return true;
+  }
+
   findStrawberrySpawnPoint(npc) {
     const candidates = [
       { x: this.player.x + 84, y: this.player.y - 8 },
@@ -3096,13 +3110,10 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   spawnStrawberryMapEncounter(options = {}) {
-    if (!this.isMapMode()) {
-      this.startBattle(options);
-      return;
-    }
+    if (!this.prepareMapSpawnContext("Strawberry Aura")) return;
     const npc = this.findStrawberryNpc();
     if (!npc) {
-      this.startBattle(options);
+      this.showToast("Strawberry Aura", "Strawberry NPC is not ready.");
       return;
     }
     const spawnPoint = this.findStrawberrySpawnPoint(npc);
@@ -3155,13 +3166,10 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   spawnDragonMapEncounter(options = {}) {
-    if (!this.isMapMode()) {
-      this.startBattle(options);
-      return;
-    }
+    if (!this.prepareMapSpawnContext("Dragon Spawn")) return;
     const npc = this.findDragonNpc();
     if (!npc) {
-      this.startBattle(options);
+      this.showToast("Dragon Spawn", "Dragon NPC is not ready.");
       return;
     }
     const spawnPoint = this.findStrawberrySpawnPoint(npc);
