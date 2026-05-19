@@ -1,0 +1,426 @@
+@font-face {
+  font-family: "BrainworldPixel";
+  src: local("Courier New");
+}
+
+:root {
+  color-scheme: dark;
+  font-family: BrainworldPixel, "Courier New", monospace;
+  background: #10142d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#game-shell {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 216, 112, 0.16), transparent 22rem),
+    radial-gradient(circle at 82% 78%, rgba(88, 208, 188, 0.12), transparent 26rem),
+    #13162f;
+}
+
+#game-shell {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+#game {
+  position: relative;
+  width: min(calc(100vw - 32px), calc((100vh - 32px) * 16 / 9), 1280px);
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 8px solid #27304d;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+  background: #78d8d0;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.profile-name-input {
+  position: absolute;
+  left: 50%;
+  top: 31%;
+  z-index: 85;
+  display: none;
+  width: min(42%, 360px);
+  transform: translate(-50%, -50%);
+  border: 4px solid #30384f;
+  border-radius: 6px;
+  background: #fffdf3;
+  color: #26324a;
+  font: 900 16px BrainworldPixel, "Courier New", monospace;
+  text-align: center;
+  padding: 11px 14px;
+  outline: none;
+  box-shadow: 0 8px 18px rgba(38, 50, 74, 0.18);
+}
+
+.profile-name-input.is-visible {
+  display: block;
+}
+
+.profile-name-input:focus {
+  border-color: #2fbf5b;
+  box-shadow: 0 0 0 4px rgba(47, 191, 91, 0.18);
+}
+
+.home-hit-button,
+.profile-hit-button {
+  position: absolute;
+  z-index: 82;
+  display: none;
+  border: 0;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.home-hit-button.is-visible,
+.profile-hit-layer.is-visible .profile-hit-button {
+  display: block;
+}
+
+.profile-hit-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 81;
+  display: none;
+  pointer-events: none;
+}
+
+.profile-hit-layer.is-visible {
+  display: block;
+}
+
+.profile-hit-button {
+  pointer-events: auto;
+}
+
+.admin-panel-dom {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 19, 34, 0.78);
+  font-family: BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-panel-dom.is-visible {
+  display: grid;
+}
+
+.admin-login-dom {
+  position: absolute;
+  inset: 0;
+  z-index: 75;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  background: rgba(16, 19, 34, 0.78);
+  font-family: BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-login-dom.is-visible {
+  display: grid;
+}
+
+.admin-login-card {
+  display: grid;
+  gap: 12px;
+  width: min(88%, 380px);
+  border: 5px solid #30384f;
+  border-radius: 8px;
+  background: #f7f1de;
+  padding: 22px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.admin-login-card h2 {
+  margin: 0;
+  color: #26324a;
+  font: 900 26px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-login-card p {
+  margin: 0;
+  color: #56617c;
+  font: 900 12px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-login-card input,
+.admin-login-card button {
+  border: 3px solid #56617c;
+  border-radius: 5px;
+  background: #fffdf3;
+  color: #26324a;
+  font: 900 13px BrainworldPixel, "Courier New", monospace;
+  padding: 10px;
+}
+
+.admin-login-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.admin-login-card button {
+  cursor: pointer;
+  background: #fff3ba;
+}
+
+.admin-card {
+  width: min(88%, 900px);
+  max-height: min(88%, 500px);
+  overflow: auto;
+  border: 5px solid #30384f;
+  border-radius: 8px;
+  background: #f7f1de;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+  padding: 22px 26px 24px;
+}
+
+.admin-card-header {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.admin-card h2 {
+  margin: 0;
+  color: #26324a;
+  font: 900 28px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-status {
+  min-height: 36px;
+  margin: 0;
+  color: #56617c;
+  font: 700 13px BrainworldPixel, "Courier New", monospace;
+  line-height: 1.35;
+}
+
+.admin-menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.admin-menu-button {
+  min-height: 42px;
+  border: 3px solid #56617c;
+  border-radius: 6px;
+  background: #fffdf3;
+  color: #26324a;
+  cursor: pointer;
+  font: 900 12px BrainworldPixel, "Courier New", monospace;
+  text-align: center;
+  padding: 10px 8px;
+}
+
+.admin-menu-button:hover,
+.admin-menu-button:focus,
+.admin-menu-button.is-selected {
+  outline: none;
+  border-color: #e6575e;
+  background: #fff3ba;
+  box-shadow: 0 0 0 3px rgba(230, 87, 94, 0.18);
+}
+
+.admin-spawn-section {
+  display: none;
+  grid-template-columns: 1fr 1.7fr 1fr 1fr 0.65fr auto;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 3px solid #30384f;
+  border-radius: 6px;
+  background: #fff8df;
+}
+
+.admin-spawn-section.is-visible {
+  display: grid;
+}
+
+.admin-spawn-title {
+  align-self: center;
+  color: #26324a;
+  font: 900 12px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-action-box {
+  display: none;
+  margin-top: 16px;
+  padding: 12px;
+  border: 3px solid #30384f;
+  border-radius: 6px;
+  background: #fff8df;
+}
+
+.admin-action-box.is-visible {
+  display: block;
+}
+
+.admin-action-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.admin-action-form h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #26324a;
+  font: 900 15px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-action-field {
+  display: grid;
+  gap: 5px;
+  color: #56617c;
+  font: 900 11px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-combo {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 38px;
+  min-width: 0;
+}
+
+.admin-panel-dom input,
+.admin-panel-dom select,
+.admin-panel-dom button {
+  min-width: 0;
+  border: 3px solid #56617c;
+  border-radius: 4px;
+  background: #fffdf3;
+  color: #26324a;
+  font: 700 12px BrainworldPixel, "Courier New", monospace;
+  padding: 8px;
+}
+
+.admin-panel-dom .admin-menu-button {
+  min-height: 42px;
+  border-radius: 6px;
+  font-weight: 900;
+  text-align: center;
+  padding: 10px 8px;
+}
+
+.admin-combo input {
+  border-radius: 4px 0 0 4px;
+}
+
+.admin-combo-toggle {
+  border-left: 0;
+  border-radius: 0 4px 4px 0;
+  padding: 8px 0;
+}
+
+.admin-combo-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: none;
+  max-height: 184px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 3px solid #30384f;
+  border-radius: 4px;
+  background: #fffdf3;
+  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.28);
+}
+
+.admin-combo-list.is-visible {
+  display: block;
+}
+
+.admin-combo-option,
+.admin-combo-empty {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #fffdf3;
+  color: #26324a;
+  text-align: left;
+  padding: 9px 10px;
+  font: 700 12px BrainworldPixel, "Courier New", monospace;
+}
+
+.admin-combo-option:hover,
+.admin-combo-option:focus {
+  background: #fff3ba;
+}
+
+.admin-combo-empty {
+  color: #7b8499;
+}
+
+.admin-spawn-section button,
+.admin-combo-toggle {
+  cursor: pointer;
+  background: #fff3ba;
+}
+
+@media (max-width: 760px) {
+  .admin-panel-dom {
+    padding: 12px;
+  }
+
+  .admin-card {
+    width: 96%;
+    max-height: 92%;
+    padding: 16px;
+  }
+
+  .admin-menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-spawn-section {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-action-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-action-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
