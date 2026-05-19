@@ -2428,13 +2428,9 @@ class BrainworldScene extends Phaser.Scene {
 	    return fallback;
 	  }
 
-		  visualNpcDirection(direction, npc = null) {
-	    if (npc?.standardDirections) return direction;
-	    return {
-	      left: "right",
-	      right: "left"
-	    }[direction] ?? direction;
-	  }
+  visualNpcDirection(direction) {
+    return direction;
+  }
 
 	  npcCanStand(npc, x, y) {
 	    if (!this.isMapMode()) return false;
