@@ -747,6 +747,8 @@ const DRAGON_NPC = {
   mapKey: "overworld",
   battleEnemyName: "Dragon Cannelloni",
   noRandomTrainer: true,
+  hiddenUntilSpawn: true,
+  noWander: true,
   scale: 0.94,
   fireScale: 1.05,
   standardDirections: true,
@@ -776,6 +778,7 @@ const NPC_TIPS = [
 
 const ADMIN_EVENT_DURATION = 60_000;
 const STRAWBERRY_SPAWN_DURATION = 180_000;
+const DRAGON_SPAWN_DURATION = 180_000;
 const MAX_TRAIT_LEVEL = 9999;
 const PROFILE_STORAGE_KEY = "brainworldProfile";
 const SESSION_STORAGE_KEY = "brainworldSession";
@@ -1003,6 +1006,7 @@ class BrainworldScene extends Phaser.Scene {
     this.tacoRainActive = false;
     this.strawberrySpawnActive = false;
     this.strawberrySpawnDrops = [];
+    this.dragonSpawnEndsAt = 0;
     this.vvsDiamonds = [];
     this.loadGameSession();
   }
@@ -1437,6 +1441,17 @@ class BrainworldScene extends Phaser.Scene {
       sideRect(82, 50 - walk, 12, 5, dragon, flip);
       sideRect(91, 53 - walk, 4, 4, claw, flip);
       [33, 40, 47, 54, 61].forEach((y) => sideRect(43, y, 7, 5, sauceDark, flip));
+      [58, 66, 74].forEach((x, index) => sideRect(x, 26 - index, 5, 5, dragonLight, flip));
+      [18, 26, 34, 42].forEach((x, index) => sideRect(x, 66 - index, 5, 4, sauceDark, flip));
+      sideRect(89, 16, 9, 3, dragonLight, flip);
+      sideRect(92, 25, 8, 2, cream, flip);
+      sideRect(82, 14, 3, 3, ink, flip);
+      sideRect(60, 45, 5, 3, dragonLight, flip);
+      sideRect(59, 53, 6, 3, dragonDark, flip);
+      sideRect(59, 61, 5, 3, dragonLight, flip);
+      sideRect(24, 40 + flap, 30, 2, "#ff8b38", flip);
+      sideRect(25, 50 + flap, 24, 2, "#7f2c1f", flip);
+      sideRect(34, 56 + flap, 4, 9, wingBone, flip);
       return;
     }
 
@@ -2970,6 +2985,9 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   updateStrawberrySpawnEffect(deltaMs) {
+    if (this.dragonSpawnEndsAt && this.time.now >= this.dragonSpawnEndsAt) {
+      this.despawnDragonMapEncounter(true);
+    }
     if (this.strawberrySpawnActive && this.strawberrySpawnEndsAt && this.time.now >= this.strawberrySpawnEndsAt) {
       this.despawnStrawberryMapEncounter(true);
       return;
@@ -3047,11 +3065,19 @@ class BrainworldScene extends Phaser.Scene {
       this.spawnStrawberryMapEncounter(options);
       return;
     }
+    if ((template?.name ?? options.enemyName) === "Dragon Cannelloni" && (options.adminSpawned || options.mapSpawnEvent)) {
+      this.spawnDragonMapEncounter(options);
+      return;
+    }
     this.startBattle(options);
   }
 
   findStrawberryNpc() {
     return this.mapNpcs?.find((npc) => npc.battleEnemyName === "Strawberry Elephant") ?? null;
+  }
+
+  findDragonNpc() {
+    return this.mapNpcs?.find((npc) => npc.battleEnemyName === "Dragon Cannelloni") ?? null;
   }
 
   findStrawberrySpawnPoint(npc) {
@@ -3106,6 +3132,65 @@ class BrainworldScene extends Phaser.Scene {
       targets: npc.sprite,
       alpha: 1,
       scale: npc.scale ?? 1.35,
+      duration: 420,
+      ease: "Back.easeOut"
+    });
+  }
+
+  despawnDragonMapEncounter(showMessage = false) {
+    const npc = this.findDragonNpc();
+    if (npc) {
+      npc.hiddenUntilSpawn = true;
+      npc.noWander = true;
+      npc.wanderTarget = null;
+      npc.battleOptions = null;
+      npc.fireSprite?.setVisible(false);
+      npc.sprite?.anims?.stop();
+      npc.sprite?.setVisible(false);
+      npc.sprite?.setAlpha(1);
+      npc.sprite?.setScale(npc.scale ?? 0.94);
+    }
+    this.dragonSpawnEndsAt = 0;
+    if (showMessage) this.showToast("Dragon Spawn", "Dragon Cannelloni flew away.");
+  }
+
+  spawnDragonMapEncounter(options = {}) {
+    if (!this.isMapMode()) {
+      this.startBattle(options);
+      return;
+    }
+    const npc = this.findDragonNpc();
+    if (!npc) {
+      this.startBattle(options);
+      return;
+    }
+    const spawnPoint = this.findStrawberrySpawnPoint(npc);
+    npc.hiddenUntilSpawn = false;
+    npc.noWander = false;
+    npc.mapKey = this.currentMapKey;
+    npc.homeX = spawnPoint.x;
+    npc.homeY = spawnPoint.y;
+    npc.wanderTarget = null;
+    npc.wanderTimer = npc.wanderTimerMs ?? 540;
+    npc.direction = "down";
+    npc.battleOptions = {
+      ...options,
+      enemyName: "Dragon Cannelloni",
+      introText: options.adminSpawned ? "ADMIN summoned Dragon Cannelloni!" : "Dragon Cannelloni appeared on the map!"
+    };
+    this.dragonSpawnEndsAt = this.time.now + (options.durationMs ?? DRAGON_SPAWN_DURATION);
+    this.setNpcPosition(npc, spawnPoint.x, spawnPoint.y);
+    npc.sprite?.setVisible(true);
+    npc.sprite?.setAlpha(0);
+    npc.sprite?.setScale((npc.scale ?? 0.94) * 0.4);
+    npc.sprite?.setFrame(this.playerIdleFrames.down);
+    npc.fireSprite?.setVisible(false);
+    this.playAdminEventAnimation("Dragon Spawn", { luck: 1 });
+    this.showToast("Dragon Spawn", "Dragon Cannelloni landed nearby. Press E beside it to battle.");
+    this.tweens.add({
+      targets: npc.sprite,
+      alpha: 1,
+      scale: npc.scale ?? 0.94,
       duration: 420,
       ease: "Back.easeOut"
     });
@@ -4616,6 +4701,7 @@ class BrainworldScene extends Phaser.Scene {
         : { enemyName: npc.battleEnemyName };
       battleOptions.introText = battleOptions.introText ?? `${npc.name} wants to battle!`;
       if (npc.key === BLOCKY_STRAWBERRY_AVATAR_KEY) this.despawnStrawberryMapEncounter(false);
+      if (npc.key === BLOCKY_DRAGON_AVATAR_KEY) this.despawnDragonMapEncounter(false);
       this.startBattle(battleOptions);
       return;
     }
@@ -5236,7 +5322,8 @@ class BrainworldScene extends Phaser.Scene {
             { value: "ALL", label: "TODOS" },
             { value: "TACO", label: "🌮 Lluvia de Tacos" },
             { value: "VVS", label: "💎 VVS Event" },
-            { value: "MUTATION", label: "✦ Mutation Storm" }
+            { value: "MUTATION", label: "✦ Mutation Storm" },
+            { value: "DRAGON", label: "Dragon Spawn" }
           ]
         },
         { key: "seconds", label: "seconds=", type: "number", value: 60, min: 5, max: 3600 }
@@ -5257,6 +5344,15 @@ class BrainworldScene extends Phaser.Scene {
         if (event === "TACO") this.runAdminEvent("Lluvia de Tacos", { trait: "TACO", durationMs: durationMs * 1000 });
         if (event === "VVS") this.runAdminEvent("VVS Event", { trait: "VVS", durationMs: durationMs * 1000 });
         if (event === "MUTATION") this.runAdminEvent("Mutation Storm", { variant: "PRISMA", durationMs: durationMs * 1000 });
+        if (event === "DRAGON") {
+          this.spawnDragonMapEncounter({
+            enemyName: "Dragon Cannelloni",
+            adminSpawned: true,
+            durationMs: durationMs * 1000,
+            introText: "ADMIN spawned Dragon Cannelloni!"
+          });
+          this.recordSpawnEconomy("Dragon Cannelloni");
+        }
       }
     });
   }
