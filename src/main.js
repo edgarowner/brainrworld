@@ -779,6 +779,8 @@ const NPC_TIPS = [
 
 const ADMIN_EVENT_DURATION = 60_000;
 const STRAWBERRY_SPAWN_DURATION = 180_000;
+const STRAWBERRY_LUCK_ROLL_MIN_MS = 11_000;
+const STRAWBERRY_LUCK_ROLL_MAX_MS = 18_000;
 const DRAGON_SPAWN_DURATION = 180_000;
 const MAX_TRAIT_LEVEL = 9999;
 const PROFILE_STORAGE_KEY = "brainworldProfile";
@@ -1007,6 +1009,7 @@ class BrainworldScene extends Phaser.Scene {
     this.tacoRainActive = false;
     this.strawberrySpawnActive = false;
     this.strawberrySpawnDrops = [];
+    this.nextStrawberryLuckRollAt = 0;
     this.dragonSpawnEndsAt = 0;
     this.vvsDiamonds = [];
     this.loadGameSession();
@@ -3019,6 +3022,39 @@ class BrainworldScene extends Phaser.Scene {
     });
   }
 
+  scheduleNextStrawberryLuckRoll() {
+    this.nextStrawberryLuckRollAt = this.time.now + Phaser.Math.Between(
+      STRAWBERRY_LUCK_ROLL_MIN_MS,
+      STRAWBERRY_LUCK_ROLL_MAX_MS
+    );
+  }
+
+  strawberryLuckSpawnChance() {
+    const luck = this.adminLuckMultiplier();
+    const eventBoost = this.activeAdminEvents().length ? 0.012 : 0;
+    return Phaser.Math.Clamp(0.012 + (luck - 1) * 0.018 + eventBoost, 0.012, 0.19);
+  }
+
+  tryRollSpontaneousStrawberrySpawn() {
+    if (!this.homeStarted || this.inBattle || this.awaitingStarterBrainrot) return;
+    if (!this.isMapMode() || this.adminPanel?.visible || this.inventoryPanel?.visible) return;
+    const strawberryNpc = this.findStrawberryNpc();
+    if (this.strawberrySpawnActive || (strawberryNpc && !strawberryNpc.hiddenUntilSpawn)) return;
+    if (!this.nextStrawberryLuckRollAt) this.scheduleNextStrawberryLuckRoll();
+    if (this.time.now < this.nextStrawberryLuckRollAt) return;
+    this.scheduleNextStrawberryLuckRoll();
+    if (Math.random() > this.strawberryLuckSpawnChance()) return;
+    const template = this.findBrainrot("Strawberry Elephant");
+    this.recordSpawnEconomy("Strawberry Elephant");
+    this.spawnStrawberryMapEncounter({
+      enemyName: "Strawberry Elephant",
+      enemyVariant: this.activeAdminVariant(),
+      enemyTraits: this.rollEventTraits(template),
+      mapSpawnEvent: true,
+      introText: "A lucky Strawberry Elephant appeared!"
+    });
+  }
+
   playStrawberrySpawnEffect(onComplete) {
     this.strawberrySpawnActive = true;
     this.strawberrySpawnStartedAt = this.time.now;
@@ -4005,6 +4041,7 @@ class BrainworldScene extends Phaser.Scene {
     const groundPlayer = this.add.ellipse(256, 342, 280, 66, 0xbfd8a0, 1);
     this.enemySprite = this.add.image(650, 128, "brainrot-Skibidi Sprout").setScale(3);
     this.playerSprite = this.add.image(250, 292, "starterBrainrot").setScale(3.1);
+    this.battleFx = this.add.container(0, 0);
     this.enemyBox = this.makeStatusBox(72, 58, 314, 82);
     this.playerBox = this.makeStatusBox(572, 290, 314, 82);
     this.dialogueBox = this.add.graphics();
@@ -4059,6 +4096,7 @@ class BrainworldScene extends Phaser.Scene {
       groundPlayer,
       this.enemySprite,
       this.playerSprite,
+      this.battleFx,
       ...this.enemyBox.parts,
       ...this.playerBox.parts,
       this.dialogueBox,
@@ -4120,6 +4158,7 @@ class BrainworldScene extends Phaser.Scene {
     this.clearExpiredAdminEvent();
     this.updateMobileControls();
     this.updateEventEffects(delta);
+    this.tryRollSpontaneousStrawberrySpawn();
     if (this.strawberrySpawnLockUntil && this.time.now < this.strawberrySpawnLockUntil) {
       this.player.anims.stop();
       this.player.setFrame(this.playerIdleFrames[this.playerDirection] ?? this.playerIdleFrames.down);
@@ -5522,6 +5561,11 @@ class BrainworldScene extends Phaser.Scene {
     return this.pickWeightedBrainrot(brainrots, this.adminLuckMultiplier());
   }
 
+  pickWildSpawnTemplate() {
+    const wildPool = brainrots.filter((brainrot) => brainrot.name !== "Strawberry Elephant");
+    return this.pickWeightedBrainrot(wildPool, this.adminLuckMultiplier());
+  }
+
   raritySpawnWeight(template, luck = 1) {
     const tier = this.tierFor(template);
     const cleanLuck = Phaser.Math.Clamp(luck, 1, 10);
@@ -6079,7 +6123,7 @@ class BrainworldScene extends Phaser.Scene {
 	      this.startStarterEncounter();
 	      return;
 	    }
-    const template = this.pickAdminSpawnTemplate();
+    const template = this.pickWildSpawnTemplate();
     this.recordSpawnEconomy(template.name);
     this.startBattleAfterSpawnAtmosphere(template, {
       enemyName: template.name,
@@ -6133,6 +6177,7 @@ class BrainworldScene extends Phaser.Scene {
 	    this.starterEncounterActive = false;
 	    this.battleNoPlayerBrainrot = Boolean(options.noPlayerBrainrot);
 	    this.pendingCapture = null;
+	    this.battleFx?.removeAll(true);
 	    this.inventoryPanel?.setVisible(false);
     if (options.playerName) {
       const playerTemplate = this.findBrainrot(options.playerName);
@@ -6250,9 +6295,149 @@ class BrainworldScene extends Phaser.Scene {
     });
   }
 
-  async animateStrike(attacker, target, home, lunge, onImpact) {
+  moveEffectStyle(move = {}) {
+    const name = (move.name ?? "").toLowerCase();
+    if (move.heal) return { kind: "heal", color: 0x4fc46b, accent: 0xfff3ba };
+    if (/fire|flame|burn|rojo|dragon|blast/.test(name)) return { kind: "projectile", color: 0xff6a2b, accent: 0xffd65d };
+    if (/aqua|blue|water|wave|splash|ice|brr/.test(name)) return { kind: "projectile", color: 0x43e5ff, accent: 0xffffff };
+    if (/bite|fang|claw|cut|slash|scratch|knife|sword|assassin/.test(name)) return { kind: "slash", color: 0xfff6d8, accent: 0xe6575e };
+    if (/saturn|cosmic|vvs|diamond|star|ring|prisma/.test(name)) return { kind: "burst", color: 0x8fd8ff, accent: 0xfff3ba };
+    if (/coffee|cappuccino|espresso|foam/.test(name)) return { kind: "burst", color: 0x9b6037, accent: 0xfff3ba };
+    if ((move.power ?? 0) >= 16) return { kind: "burst", color: 0xe6575e, accent: 0xfff3ba };
+    return { kind: "impact", color: 0xf5c85b, accent: 0xffffff };
+  }
+
+  destroyBattleFx(sprite) {
+    this.tweens.killTweensOf(sprite);
+    sprite.destroy();
+  }
+
+  addBattleFx(item) {
+    item.setScrollFactor?.(0);
+    this.battleFx?.add(item);
+    return item;
+  }
+
+  async playHealEffect(target, move) {
+    const style = this.moveEffectStyle(move);
+    const rings = [0, 1, 2].map((index) => {
+      const ring = this.add.circle(target.x, target.y - 8, 18 + index * 9, style.color, 0);
+      ring.setStrokeStyle(4, style.color, 0.82 - index * 0.16);
+      this.addBattleFx(ring);
+      this.tweens.add({
+        targets: ring,
+        scale: 1.8,
+        alpha: 0,
+        duration: 520 + index * 120,
+        ease: "Quad.easeOut",
+        onComplete: () => this.destroyBattleFx(ring)
+      });
+      return ring;
+    });
+    const sparkle = this.add.star(target.x, target.y - 52, 5, 5, 13, style.accent, 0.95);
+    this.addBattleFx(sparkle);
+    this.tweens.add({
+      targets: sparkle,
+      y: sparkle.y - 22,
+      angle: 180,
+      alpha: 0,
+      duration: 620,
+      ease: "Quad.easeOut",
+      onComplete: () => this.destroyBattleFx(sparkle)
+    });
+    await this.wait(420);
+  }
+
+  async playProjectileEffect(attacker, target, style) {
+    const orb = this.add.circle(attacker.x, attacker.y - 10, 9, style.color, 0.96);
+    const core = this.add.circle(attacker.x, attacker.y - 10, 4, style.accent, 1);
+    this.addBattleFx(orb);
+    this.addBattleFx(core);
+    this.tweens.add({
+      targets: orb,
+      scale: 1.45,
+      yoyo: true,
+      repeat: 1,
+      duration: 90
+    });
+    await Promise.all([
+      this.tweenTo({ targets: orb, x: target.x, y: target.y - 18, duration: 210, ease: "Quad.easeIn" }),
+      this.tweenTo({ targets: core, x: target.x, y: target.y - 18, duration: 210, ease: "Quad.easeIn" })
+    ]);
+    this.destroyBattleFx(orb);
+    this.destroyBattleFx(core);
+    await this.playImpactBurst(target, style);
+  }
+
+  async playSlashEffect(target, style) {
+    const slash = this.add.graphics();
+    slash.lineStyle(5, style.color, 0.95);
+    slash.beginPath();
+    slash.moveTo(target.x - 52, target.y - 46);
+    slash.lineTo(target.x + 44, target.y + 14);
+    slash.moveTo(target.x - 34, target.y + 18);
+    slash.lineTo(target.x + 54, target.y - 38);
+    slash.strokePath();
+    slash.lineStyle(2, style.accent, 0.9);
+    slash.beginPath();
+    slash.moveTo(target.x - 50, target.y - 34);
+    slash.lineTo(target.x + 30, target.y + 20);
+    slash.strokePath();
+    this.addBattleFx(slash);
+    this.tweens.add({
+      targets: slash,
+      alpha: 0,
+      scaleX: 1.18,
+      scaleY: 1.18,
+      duration: 260,
+      ease: "Quad.easeOut",
+      onComplete: () => this.destroyBattleFx(slash)
+    });
+    await this.wait(210);
+  }
+
+  async playImpactBurst(target, style) {
+    const ring = this.add.circle(target.x, target.y - 12, 22, style.color, 0);
+    ring.setStrokeStyle(5, style.color, 0.88);
+    const flash = this.add.circle(target.x, target.y - 12, 13, style.accent, 0.84);
+    this.addBattleFx(ring);
+    this.addBattleFx(flash);
+    this.tweens.add({
+      targets: ring,
+      scale: 2.2,
+      alpha: 0,
+      duration: 300,
+      ease: "Quad.easeOut",
+      onComplete: () => this.destroyBattleFx(ring)
+    });
+    this.tweens.add({
+      targets: flash,
+      scale: 0.15,
+      alpha: 0,
+      duration: 240,
+      ease: "Quad.easeOut",
+      onComplete: () => this.destroyBattleFx(flash)
+    });
+    await this.wait(230);
+  }
+
+  async playAttackEffect(move, attacker, target) {
+    const style = this.moveEffectStyle(move);
+    if (style.kind === "projectile") {
+      await this.playProjectileEffect(attacker, target, style);
+      return;
+    }
+    if (style.kind === "slash") {
+      await this.playSlashEffect(target, style);
+      return;
+    }
+    await this.playImpactBurst(target, style);
+  }
+
+  async animateStrike(attacker, target, home, lunge, onImpact, move = null) {
     this.tweens.killTweensOf([attacker, target]);
     await this.tweenTo({ targets: attacker, x: lunge.x, y: lunge.y, duration: 150, ease: "Quad.easeOut" });
+    await this.playAttackEffect(move, attacker, target);
     onImpact();
     this.tweens.add({ targets: target, x: target.x + (target.x > attacker.x ? 18 : -18), alpha: 0.55, yoyo: true, repeat: 2, duration: 58 });
     await this.wait(210);
@@ -6268,6 +6453,7 @@ class BrainworldScene extends Phaser.Scene {
       this.playerBrainrot.hp = Math.min(this.playerBrainrot.maxHp, this.playerBrainrot.hp + move.heal);
       this.dialogueText.setText(`${this.playerBrainrot.name} used ${move.name}.\nIt got its focus back.`);
       this.updateBattleStats();
+      await this.playHealEffect(this.playerSprite, move);
       this.tweens.add({ targets: this.playerSprite, scale: this.battleScaleFor(this.playerBrainrot, "back") * 1.08, yoyo: true, repeat: 1, duration: 120 });
     } else {
       const damage = this.rollDamage(move.power, this.playerBrainrot.level, this.enemy.level);
@@ -6282,7 +6468,8 @@ class BrainworldScene extends Phaser.Scene {
           this.dialogueText.setText(`${this.playerBrainrot.name} used ${move.name}.\n${damage} damage!`);
           this.updateBattleStats();
           this.showDamagePop(650, 116, `-${damage}`);
-        }
+        },
+        move
       );
     }
     if (this.enemy.hp <= 0) {
@@ -6306,7 +6493,8 @@ class BrainworldScene extends Phaser.Scene {
         this.dialogueText.setText(`${this.enemy.name} used ${move.name}.\n${damage} damage!`);
         this.updateBattleStats();
         this.showDamagePop(250, 270, `-${damage}`);
-      }
+      },
+      move
     );
     if (this.playerBrainrot.hp <= 0) {
       this.time.delayedCall(900, () => {
