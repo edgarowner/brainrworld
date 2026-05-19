@@ -657,6 +657,47 @@ const SOUTH_VILLAGE_DOORS = [
   { key: "southVillageReturn", label: "Volver al pueblo", x: 674, y: 116, w: 96, h: 58, toMap: "overworld", targetX: 512, targetY: 972, targetDirection: "up" }
 ];
 
+const MAPTEST_BLOCKERS = [
+  [0, 0, 1402, 86],
+  [0, 0, 64, 1122],
+  [1338, 0, 64, 1122],
+  [0, 1040, 1402, 82],
+  [94, 118, 308, 120],
+  [998, 108, 298, 132],
+  [214, 304, 210, 150],
+  [598, 252, 218, 150],
+  [930, 438, 250, 162],
+  [190, 772, 242, 146],
+  [602, 794, 236, 146],
+  [1042, 754, 222, 142],
+  [546, 532, 310, 176],
+  [122, 512, 28, 240],
+  [150, 512, 246, 20],
+  [386, 512, 22, 240],
+  [150, 732, 258, 20],
+  [970, 262, 268, 18],
+  [970, 392, 268, 18],
+  [970, 262, 20, 148],
+  [1218, 262, 20, 148],
+  [90, 926, 250, 64],
+  [938, 940, 250, 64],
+  [1240, 520, 112, 210]
+];
+
+const MAPTEST_TALL_GRASS_RECTS = [
+  [158, 548, 220, 166],
+  [946, 286, 254, 92],
+  [510, 884, 270, 94],
+  [928, 650, 250, 76]
+];
+
+const MAPTEST_DOORS = [
+  { key: "maptestBlueHome", label: "Casa de prueba azul", x: 270, y: 398, w: 54, h: 58, interior: "interiorBlueHome", returnMap: "maptest", returnX: 298, returnY: 502 },
+  { key: "maptestRedHome", label: "Casa fresa", x: 668, y: 346, w: 58, h: 58, interior: "interiorRedHome", returnMap: "maptest", returnX: 696, returnY: 456 },
+  { key: "maptestHealCenter", label: "Clinica de prueba", x: 1014, y: 540, w: 58, h: 58, interior: "interiorHealCenter", returnMap: "maptest", returnX: 1044, returnY: 650, heal: true },
+  { key: "maptestSouthGate", label: "Volver al pueblo", x: 640, y: 1010, w: 126, h: 60, toMap: "overworld", targetX: 512, targetY: 972, targetDirection: "up" }
+];
+
 const NPC_SPAWN_ZONES = [
   [110, 326, 300, 58],
   [430, 330, 360, 70],
@@ -717,6 +758,7 @@ const NPC_TIPS = [
 ];
 
 const ADMIN_EVENT_DURATION = 60_000;
+const STRAWBERRY_SPAWN_DURATION = 180_000;
 const MAX_TRAIT_LEVEL = 9999;
 const PROFILE_STORAGE_KEY = "brainworldProfile";
 const SESSION_STORAGE_KEY = "brainworldSession";
@@ -904,6 +946,7 @@ class BrainworldScene extends Phaser.Scene {
     this.lastStepTile = "";
     this.locationMode = "overworld";
     this.currentMapKey = "overworld";
+    this.initialRouteMapKey = this.routeMapKey();
     this.currentInterior = null;
     this.moveTarget = null;
     this.mapWorldW = TOWN_W;
@@ -1013,6 +1056,9 @@ class BrainworldScene extends Phaser.Scene {
     this.createMobileControls();
     this.createTacoRain();
     this.createHomeScreen();
+    if (this.initialRouteMapKey === "maptest") {
+      this.setMapZone("maptest", { playerX: 706, playerY: 884, direction: "up" });
+    }
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.setBounds(0, 0, this.mapWorldW, this.mapWorldH);
     this.time.delayedCall(900, () => this.showToast("Brainworld Town", "Parate frente a una puerta y presiona E."));
@@ -1063,6 +1109,10 @@ class BrainworldScene extends Phaser.Scene {
     };
   }
 
+  routeMapKey() {
+    return window.location.pathname.replace(/\/+$/, "") === "/maptest" ? "maptest" : "overworld";
+  }
+
   createTextures() {
     this.makeAssetTexture("water", "na-water", 32, 32, 16, 16);
     this.makeAssetTexture("grass", "na-floor", 48, 176, 16, 16);
@@ -1088,6 +1138,7 @@ class BrainworldScene extends Phaser.Scene {
     this.makeTacoDropTexture();
     this.makeStrawberryDropTexture();
     this.makeDiamondDropTexture();
+    this.makeMapTestTexture();
     this.makeBlockyStrawberryElephantTexture(BLOCKY_STRAWBERRY_AVATAR_KEY);
     this.makeBrainrotTexture("starterBrainrot", this.playerBrainrot.color, this.playerBrainrot.shade, "back");
     this.makeBerryphantBackTexture("brainrot-Berryphant-back");
@@ -1414,6 +1465,101 @@ class BrainworldScene extends Phaser.Scene {
     strokeRect(ctx, 4, 6, 16, 4, "#095b8f", 1);
     fillRect(ctx, 11, 3, 2, 16, "#ffffff");
     fillRect(ctx, 8, 8, 8, 1, "#ffffff");
+    texture.refresh();
+  }
+
+  makeMapTestTexture() {
+    const texture = this.textures.createCanvas("maptestMap", TOWN_W, TOWN_H);
+    const ctx = texture.getContext();
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, TOWN_W, TOWN_H);
+    const stamp = (key, x, y, scale = SCALE) => {
+      const source = this.textures.get(key).getSourceImage();
+      ctx.drawImage(source, x, y, source.width, source.height, x * scale, y * scale, source.width * scale, source.height * scale);
+    };
+    const tile = (key, x, y, scale = SCALE) => {
+      const source = this.textures.get(key).getSourceImage();
+      ctx.drawImage(source, x, y, source.width * scale, source.height * scale);
+    };
+    const fillTiles = (key, x, y, w, h, scale = SCALE) => {
+      const source = this.textures.get(key).getSourceImage();
+      const tw = source.width * scale;
+      const th = source.height * scale;
+      for (let yy = y; yy < y + h; yy += th) {
+        for (let xx = x; xx < x + w; xx += tw) tile(key, xx, yy, scale);
+      }
+    };
+    const rect = (x, y, w, h, color) => fillRect(ctx, x, y, w, h, color);
+
+    fillTiles("grass", 0, 0, TOWN_W, TOWN_H);
+    fillTiles("path", 646, 74, 96, 998);
+    fillTiles("path", 112, 454, 1158, 112);
+    fillTiles("path", 414, 244, 534, 88);
+    fillTiles("path", 444, 728, 666, 92);
+    fillTiles("path", 630, 1002, 154, 78);
+
+    fillTiles("water", 548, 532, 306, 174);
+    rect(548, 532, 306, 10, "#318dc0");
+    rect(548, 696, 306, 10, "#318dc0");
+    rect(548, 532, 10, 174, "#318dc0");
+    rect(844, 532, 10, 174, "#318dc0");
+    tile("pondSmall", 646, 570, 1.5);
+
+    fillTiles("cliff", 0, 0, TOWN_W, 92);
+    fillTiles("cliff", 0, 1036, TOWN_W, 86);
+    fillTiles("cliff", 0, 0, 66, TOWN_H);
+    fillTiles("cliff", 1336, 0, 66, TOWN_H);
+
+    const house = (x, y, roof, wall, accent = "#64aac5") => {
+      rect(x + 20, y + 46, 150, 88, wall);
+      rect(x + 24, y + 52, 142, 10, "rgba(255,255,255,0.22)");
+      rect(x + 46, y + 78, 30, 28, accent);
+      rect(x + 116, y + 78, 30, 28, accent);
+      strokeRect(ctx, x + 46, y + 78, 30, 28, "#596575", 3);
+      strokeRect(ctx, x + 116, y + 78, 30, 28, "#596575", 3);
+      rect(x + 82, y + 98, 30, 36, "#a26947");
+      rect(x + 104, y + 114, 4, 4, "#ffe08a");
+      rect(x + 8, y + 34, 174, 18, "#69405a");
+      for (let i = 0; i < 7; i += 1) {
+        rect(x + 22 + i * 20, y + 12 + (i % 2) * 3, 30, 25, roof);
+        rect(x + 22 + i * 20, y + 34 + (i % 2) * 3, 30, 8, "#8b3c54");
+      }
+      rect(x + 16, y + 132, 160, 7, "#8b6a40");
+    };
+    house(206, 302, "#3f8bd5", "#f4d895");
+    house(590, 250, "#df5968", "#f1d19b");
+    house(930, 438, "#43a565", "#f6dca6");
+    house(190, 772, "#dcbc45", "#f4d895");
+    house(602, 794, "#7b58b6", "#f1d19b");
+    house(1042, 754, "#3e8ccf", "#f5dfa5");
+
+    const drawAssetLine = (key, x, y, count, vertical = false) => {
+      const source = this.textures.get(key).getSourceImage();
+      for (let i = 0; i < count; i += 1) tile(key, x + (vertical ? 0 : i * source.width * SCALE), y + (vertical ? i * source.height * SCALE : 0));
+    };
+    drawAssetLine("fence", 122, 512, 6);
+    drawAssetLine("fence", 122, 728, 6);
+    drawAssetLine("fenceV", 122, 512, 5, true);
+    drawAssetLine("fenceV", 390, 512, 5, true);
+    drawAssetLine("fence", 970, 262, 6);
+    drawAssetLine("fence", 970, 390, 6);
+    drawAssetLine("fenceV", 970, 262, 3, true);
+    drawAssetLine("fenceV", 1220, 262, 3, true);
+
+    MAPTEST_TALL_GRASS_RECTS.forEach(([gx, gy, gw, gh]) => fillTiles("tallGrass", gx, gy, gw, gh));
+    [
+      [108, 120], [168, 120], [228, 120], [288, 120], [348, 120],
+      [1000, 116], [1060, 116], [1120, 116], [1180, 116], [1240, 116],
+      [96, 920], [156, 920], [216, 920], [276, 920],
+      [938, 936], [998, 936], [1058, 936], [1118, 936]
+    ].forEach(([x, y], index) => {
+      tile("tree", x, y, index > 4 && index < 10 ? 2.8 : 2.5);
+    });
+    [[470, 390], [515, 408], [880, 350], [902, 388], [480, 860], [895, 860], [1240, 508]].forEach(([x, y]) => tile("rock", x, y, 1.1));
+    [[416, 382], [452, 382], [918, 628], [954, 628], [990, 628], [510, 718], [548, 718], [1110, 918]].forEach(([x, y], index) => {
+      tile(index % 3 === 0 ? "flowerPink" : index % 3 === 1 ? "flowerGold" : "flowerWhite", x, y, 2.4);
+    });
+    for (let y = 1016; y <= 1064; y += 12) rect(612, y, 178, 5, "#b8b09b");
     texture.refresh();
   }
 
@@ -1798,6 +1944,16 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   mapConfigFor(mapKey = this.currentMapKey) {
+    if (mapKey === "maptest") {
+      return {
+        key: "maptest",
+        texture: "maptestMap",
+        blockers: MAPTEST_BLOCKERS,
+        grass: MAPTEST_TALL_GRASS_RECTS,
+        doors: MAPTEST_DOORS,
+        title: "Map Test"
+      };
+    }
     if (mapKey === "southVillage") {
       return {
         key: "southVillage",
@@ -1855,7 +2011,7 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   isMapMode() {
-    return this.locationMode === "overworld" || this.locationMode === "southVillage";
+    return this.locationMode === "overworld" || this.locationMode === "southVillage" || this.locationMode === "maptest";
   }
 
   makeCollisionRect(x, y, w, h) {
@@ -2546,6 +2702,10 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   updateStrawberrySpawnEffect(deltaMs) {
+    if (this.strawberrySpawnActive && this.strawberrySpawnEndsAt && this.time.now >= this.strawberrySpawnEndsAt) {
+      this.despawnStrawberryMapEncounter(true);
+      return;
+    }
     const visible = Boolean(this.strawberrySpawnActive && this.homeStarted && !this.inBattle);
     this.strawberrySpawnLayer?.setVisible(visible);
     this.strawberrySpawnTint?.setVisible(visible);
@@ -2573,17 +2733,38 @@ class BrainworldScene extends Phaser.Scene {
   playStrawberrySpawnEffect(onComplete) {
     this.strawberrySpawnActive = true;
     this.strawberrySpawnStartedAt = this.time.now;
+    this.strawberrySpawnLockUntil = this.time.now + 700;
     this.moveTarget = null;
     this.strawberrySpawnDrops?.forEach((drop) => this.resetStrawberryDrop(drop, false));
     this.strawberrySpawnLayer?.setVisible(true);
     this.strawberrySpawnTint?.setVisible(true);
     this.showToast("Strawberry Aura", "The map turns pink as strawberries fall.");
     this.time.delayedCall(900, () => {
-      this.strawberrySpawnActive = false;
-      this.strawberrySpawnLayer?.setVisible(false);
-      this.strawberrySpawnTint?.setVisible(false);
       onComplete?.();
     });
+  }
+
+  stopStrawberrySpawnEffect() {
+    this.strawberrySpawnActive = false;
+    this.strawberrySpawnLockUntil = 0;
+    this.strawberrySpawnEndsAt = 0;
+    this.strawberrySpawnLayer?.setVisible(false);
+    this.strawberrySpawnTint?.setVisible(false);
+  }
+
+  despawnStrawberryMapEncounter(showMessage = false) {
+    const npc = this.findStrawberryNpc();
+    if (npc) {
+      npc.hiddenUntilSpawn = true;
+      npc.noWander = true;
+      npc.wanderTarget = null;
+      npc.battleOptions = null;
+      npc.sprite?.setVisible(false);
+      npc.sprite?.setAlpha(1);
+      npc.sprite?.setScale(npc.scale ?? 1.35);
+    }
+    this.stopStrawberrySpawnEffect();
+    if (showMessage) this.showToast("Strawberry Aura", "Strawberry Elephant disappeared.");
   }
 
   startBattleAfterSpawnAtmosphere(template, options = {}) {
@@ -2637,6 +2818,7 @@ class BrainworldScene extends Phaser.Scene {
       enemyName: "Strawberry Elephant",
       introText: options.adminSpawned ? "ADMIN summoned Strawberry Elephant!" : "Strawberry Elephant appeared on the map!"
     };
+    this.strawberrySpawnEndsAt = this.time.now + STRAWBERRY_SPAWN_DURATION;
     this.setNpcPosition(npc, spawnPoint.x, spawnPoint.y);
     npc.sprite?.setVisible(true);
     npc.sprite?.setAlpha(0);
@@ -3573,7 +3755,7 @@ class BrainworldScene extends Phaser.Scene {
     this.clearExpiredAdminEvent();
     this.updateMobileControls();
     this.updateEventEffects(delta);
-    if (this.strawberrySpawnActive) {
+    if (this.strawberrySpawnLockUntil && this.time.now < this.strawberrySpawnLockUntil) {
       this.player.anims.stop();
       this.player.setFrame(this.playerIdleFrames[this.playerDirection] ?? this.playerIdleFrames.down);
       this.doorPrompt?.setVisible(false);
@@ -4146,6 +4328,7 @@ class BrainworldScene extends Phaser.Scene {
         ? { ...npc.battleOptions }
         : { enemyName: npc.battleEnemyName };
       battleOptions.introText = battleOptions.introText ?? `${npc.name} wants to battle!`;
+      this.despawnStrawberryMapEncounter(false);
       this.startBattle(battleOptions);
       return;
     }
