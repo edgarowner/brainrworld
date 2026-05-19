@@ -10,6 +10,8 @@ const VIEW_H = 540;
 const TOWN_W = 1402;
 const TOWN_H = 1122;
 const BLOCKY_STRAWBERRY_AVATAR_KEY = "player-strawberry-elephant-blocky";
+const BLOCKY_DRAGON_AVATAR_KEY = "dragon-cannelloni-blocky";
+const DRAGON_FIRE_KEY = "dragon-cannelloni-fire";
 
 const COLORS = {
   water: "#75cfe6",
@@ -736,14 +738,29 @@ const STRAWBERRY_NPC = {
   wanderTimerMs: 350
 };
 
-const ADMIN_NPC = { x: 612, y: 787, key: "npcHiker", frame: 4, name: "ADMIN", admin: true };
+const DRAGON_NPC = {
+  key: BLOCKY_DRAGON_AVATAR_KEY,
+  frame: 4,
+  name: "Dragon Cannelloni",
+  x: 1118,
+  y: 662,
+  mapKey: "overworld",
+  battleEnemyName: "Dragon Cannelloni",
+  noRandomTrainer: true,
+  scale: 0.94,
+  fireScale: 1.05,
+  standardDirections: true,
+  wanderRadius: 110,
+  wanderSpeed: 56,
+  wanderTimerMs: 540,
+  breathesFire: true
+};
 
 const SOUTH_VILLAGE_NPCS = [
   { key: "npcBlue", frame: 4, name: "Guia Sur", x: 748, y: 270, tipIndex: 0, mapKey: "southVillage" },
   { key: "npcPink", frame: 4, name: "Florista", x: 1134, y: 724, tipIndex: 2, mapKey: "southVillage" },
   { key: "npcKid", frame: 4, name: "Scout", x: 430, y: 720, tipIndex: 6, mapKey: "southVillage" },
-  { key: "npcHiker", frame: 4, name: "Guardia", x: 512, y: 502, tipIndex: 5, mapKey: "southVillage" },
-  { key: "npcBlue", frame: 4, name: "Curadora", x: 842, y: 506, tipIndex: 7, mapKey: "southVillage" }
+  { key: "npcHiker", frame: 4, name: "Guardia", x: 512, y: 502, tipIndex: 5, mapKey: "southVillage" }
 ];
 
 const NPC_TIPS = [
@@ -1140,6 +1157,8 @@ class BrainworldScene extends Phaser.Scene {
     this.makeDiamondDropTexture();
     this.makeMapTestTexture();
     this.makeBlockyStrawberryElephantTexture(BLOCKY_STRAWBERRY_AVATAR_KEY);
+    this.makeBlockyDragonCannelloniTexture(BLOCKY_DRAGON_AVATAR_KEY);
+    this.makeDragonFireTexture();
     this.makeBrainrotTexture("starterBrainrot", this.playerBrainrot.color, this.playerBrainrot.shade, "back");
     this.makeBerryphantBackTexture("brainrot-Berryphant-back");
     brainrots.forEach((brainrot) => {
@@ -1153,7 +1172,7 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   createCharacterAnimations() {
-    const characterKeys = ["player", "npcPink", "npcBlue", "npcKid", "npcHiker", BLOCKY_STRAWBERRY_AVATAR_KEY];
+    const characterKeys = ["player", "npcPink", "npcBlue", "npcKid", "npcHiker", BLOCKY_STRAWBERRY_AVATAR_KEY, BLOCKY_DRAGON_AVATAR_KEY];
     const directions = {
       up: [0, 1, 2],
       down: [3, 4, 5],
@@ -1211,6 +1230,15 @@ class BrainworldScene extends Phaser.Scene {
     texture.refresh();
   }
 
+  brainrotSpritePalette(name, fallback) {
+    const template = brainrots.find((brainrot) => brainrot.name === name);
+    return {
+      ...fallback,
+      main: template?.color ?? fallback.main,
+      shade: template?.shade ?? fallback.shade
+    };
+  }
+
   makeBlockyStrawberryElephantTexture(key) {
     const frameW = 64;
     const frameH = 72;
@@ -1230,8 +1258,9 @@ class BrainworldScene extends Phaser.Scene {
   }
 
   drawBlockyStrawberryElephantFrame(ctx, ox, oy, direction, step) {
-    const red = "#e6494f";
-    const redDark = "#a92f3d";
+    const palette = this.brainrotSpritePalette("Strawberry Elephant", { main: "#e6494f", shade: "#a92f3d" });
+    const red = palette.main;
+    const redDark = palette.shade;
     const redShade = "#c83a42";
     const redLight = "#ff6b72";
     const earPink = "#ff8a91";
@@ -1253,12 +1282,18 @@ class BrainworldScene extends Phaser.Scene {
     if (direction === "left" || direction === "right") {
       const flip = direction === "left" ? -1 : 1;
       const cx = direction === "left" ? 30 : 34;
-      rect(cx - 22, 25, 43, 30, redDark);
-      rect(cx - 19, 20, 45, 36, red);
-      rect(cx - 13, 17, 31, 12, redLight);
-      rect(cx - 33 * flip, 22, 20 * flip, 27, redShade);
-      rect(cx - 31 * flip, 25, 15 * flip, 21, earPink);
-      rect(cx + 17 * flip, 24, 11 * flip, 15, redDark);
+	      rect(cx - 22, 25, 43, 30, redDark);
+	      rect(cx - 19, 20, 45, 36, red);
+	      rect(cx - 13, 17, 31, 12, redLight);
+	      if (direction === "right") {
+	        rect(cx - 27, 36, 10, 5, redDark);
+	        rect(cx - 31, 38, 6, 4, redShade);
+	      } else {
+	        rect(cx + 18, 36, 10, 5, redDark);
+	        rect(cx + 27, 38, 6, 4, redShade);
+	      }
+	      rect(cx + 17 * flip, 24, 13 * flip, 22, redShade);
+	      rect(cx + 19 * flip, 27, 9 * flip, 17, earPink);
       rect(cx + 23 * flip, 30 + trunkSwing, 9 * flip, 25, red);
       rect(cx + 25 * flip, 51 + trunkSwing, 11 * flip, 8, redDark);
       rect(cx + 18 * flip, 39 + trunkSwing, 5 * flip, 12, white);
@@ -1309,6 +1344,167 @@ class BrainworldScene extends Phaser.Scene {
       rect(28 - trunkSwing, 42, 9, 16, redDark);
     }
     seedDots.forEach(([x, y]) => rect(x, y, 2, 2, seed));
+  }
+
+  makeBlockyDragonCannelloniTexture(key) {
+    const frameW = 112;
+    const frameH = 96;
+    const canvas = document.createElement("canvas");
+    canvas.width = frameW * 12;
+    canvas.height = frameH;
+    const ctx = canvas.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const directions = ["up", "up", "up", "down", "down", "down", "left", "left", "left", "right", "right", "right"];
+    const steps = [-1, 0, 1, -1, 0, 1, -1, 0, 1, -1, 0, 1];
+    directions.forEach((direction, frame) => {
+      this.drawBlockyDragonCannelloniFrame(ctx, frame * frameW, 0, direction, steps[frame]);
+    });
+    if (this.textures.exists(key)) this.textures.remove(key);
+    this.textures.addSpriteSheet(key, canvas, { frameWidth: frameW, frameHeight: frameH });
+  }
+
+  drawBlockyDragonCannelloniFrame(ctx, ox, oy, direction, step) {
+    const palette = this.brainrotSpritePalette("Dragon Cannelloni", { main: "#e6b941", shade: "#8f5a25" });
+    const dragon = palette.main;
+    const dragonDark = palette.shade;
+    const dragonLight = "#f7d977";
+    const belly = "#f3c65d";
+    const sauce = COLORS.accent;
+    const sauceDark = "#aa3b34";
+    const wing = "#d95b22";
+    const wingShade = "#a83a20";
+    const wingBone = "#ffd76c";
+    const claw = "#3f2419";
+    const cream = COLORS.cream;
+    const ink = COLORS.ink;
+    const walk = step === 0 ? 0 : step * 2;
+    const flap = step === 0 ? 0 : step * 4;
+    const jaw = step === 0 ? 0 : 1;
+    const rect = (x, y, w, h, color) => fillRect(ctx, ox + x, oy + y, w, h, color);
+    const sideRect = (x, y, w, h, color, flip) => {
+      const px = flip === -1 ? 112 - x - w : x;
+      rect(px, y, w, h, color);
+    };
+    const scaleLine = (x, y, count, flip = 1) => {
+      for (let index = 0; index < count; index += 1) {
+        sideRect(x + index * 6, y + (index % 2), 4, 3, dragonLight, flip);
+      }
+    };
+
+    rect(16, 84, 82, 8, "rgba(28, 32, 40, 0.2)");
+
+    if (direction === "left" || direction === "right") {
+      const flip = direction === "left" ? -1 : 1;
+
+      sideRect(5, 69 - walk, 46, 9, dragonDark, flip);
+      sideRect(2, 72 - walk, 22, 7, dragon, flip);
+      sideRect(0, 75 - walk, 9, 5, dragonLight, flip);
+
+      sideRect(31, 24 + flap, 17, 7, wingBone, flip);
+      sideRect(18, 34 + flap, 44, 10, wing, flip);
+      sideRect(22, 45 + flap, 32, 10, wingShade, flip);
+      sideRect(32, 34 + flap, 4, 32, wingBone, flip);
+      sideRect(50, 29 + flap, 4, 26, wingBone, flip);
+      sideRect(25, 62 + flap, 29, 3, wingBone, flip);
+
+      sideRect(46, 37, 32, 34, dragonDark, flip);
+      sideRect(49, 30, 28, 40, dragon, flip);
+      sideRect(55, 28, 17, 8, dragonLight, flip);
+      sideRect(55, 44, 13, 22, belly, flip);
+      scaleLine(50, 39, 4, flip);
+      scaleLine(51, 53, 3, flip);
+
+      sideRect(50, 70 + walk, 12, 19, dragonDark, flip);
+      sideRect(48, 86 + walk, 18, 6, dragon, flip);
+      sideRect(53, 90 + walk, 5, 4, claw, flip);
+      sideRect(68, 69 - walk, 12, 20, dragonDark, flip);
+      sideRect(66, 86 - walk, 18, 6, dragon, flip);
+      sideRect(76, 90 - walk, 5, 4, claw, flip);
+
+      sideRect(68, 20, 13, 22, dragonDark, flip);
+      sideRect(75, 10, 18, 22, dragon, flip);
+      sideRect(88, 18, 20, 10, dragonDark, flip);
+      sideRect(91, 20, 17, 7 + jaw, sauce, flip);
+      sideRect(77, 4, 7, 13, dragonLight, flip);
+      sideRect(93, 4, 7, 14, dragonLight, flip);
+      sideRect(85, 0, 5, 12, dragonLight, flip);
+      sideRect(78, 18, 5, 5, ink, flip);
+      sideRect(80, 19, 2, 2, cream, flip);
+      sideRect(96, 30, 5, 7, cream, flip);
+
+      sideRect(75, 45 - walk, 10, 7, dragonDark, flip);
+      sideRect(82, 50 - walk, 12, 5, dragon, flip);
+      sideRect(91, 53 - walk, 4, 4, claw, flip);
+      [33, 40, 47, 54, 61].forEach((y) => sideRect(43, y, 7, 5, sauceDark, flip));
+      return;
+    }
+
+    const back = direction === "up";
+    rect(16 - walk, 24 + flap, 24, 8, wingBone);
+    rect(6 - walk, 36 + flap, 39, 11, wing);
+    rect(11 - walk, 49 + flap, 30, 10, wingShade);
+    rect(30 - walk, 34 + flap, 4, 34, wingBone);
+    rect(72 + walk, 24 + flap, 24, 8, wingBone);
+    rect(67 + walk, 36 + flap, 39, 11, wing);
+    rect(71 + walk, 49 + flap, 30, 10, wingShade);
+    rect(78 + walk, 34 + flap, 4, 34, wingBone);
+    rect(42, 23, 31, 14, dragonDark);
+    rect(36, 36, 41, 38, dragon);
+    rect(42, 29, 29, 10, dragonLight);
+    rect(45, 41, 24, 3, "rgba(255,255,255,0.28)");
+    rect(45, 54, 25, 3, dragonDark);
+    rect(48, 43, 17, 25, belly);
+    rect(39, 73 + walk, 11, 18, dragonDark);
+    rect(66, 73 - walk, 11, 18, dragonDark);
+    rect(36, 88 + walk, 17, 6, dragon);
+    rect(63, 88 - walk, 17, 6, dragon);
+    rect(50, 9, 14, 18, dragon);
+    rect(41, 13, 7, 13, dragonLight);
+    rect(66, 13, 7, 13, dragonLight);
+    rect(53, 2, 7, 14, dragonLight);
+    rect(42, 39, 5, 29, sauce);
+    rect(68, 39, 5, 29, sauceDark);
+    if (back) {
+      rect(49, 21, 17, 47, dragonDark);
+      rect(53, 24, 10, 41, dragonLight);
+      [30, 36, 42, 48, 54, 60].forEach((y, index) => rect(59 + (index % 2) * 3, y, 7, 6, sauceDark));
+      rect(42 + walk, 67, 28, 9, dragonDark);
+      rect(36 + walk, 74, 21, 8, dragon);
+      rect(32 + walk, 77, 10, 5, dragonLight);
+      return;
+    }
+    rect(43, 16, 28, 18, dragon);
+    rect(39, 22, 36, 16, dragonDark);
+    rect(41, 24, 32, 12, dragon);
+    rect(45, 22, 6, 6, ink);
+    rect(47, 23, 2, 2, cream);
+    rect(64, 22, 6, 6, ink);
+    rect(66, 23, 2, 2, cream);
+    rect(44, 34, 26, 8 + jaw, sauce);
+    rect(43, 41, 5, 8, cream);
+    rect(66, 41, 5, 8, cream);
+    rect(38, 5, 8, 15, dragonLight);
+    rect(69, 5, 8, 15, dragonLight);
+    rect(44, 47, 24, 19, belly);
+    rect(48, 49, 16, 3, dragonLight);
+    rect(48, 57, 16, 3, dragonDark);
+    rect(42, 92 + walk, 5, 4, claw);
+    rect(69, 92 - walk, 5, 4, claw);
+  }
+
+  makeDragonFireTexture() {
+    const texture = this.textures.createCanvas(DRAGON_FIRE_KEY, 32, 22);
+    const ctx = texture.getContext();
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 32, 22);
+    fillRect(ctx, 1, 8, 8, 7, "#ffef9a");
+    fillRect(ctx, 6, 5, 13, 12, "#ffb33b");
+    fillRect(ctx, 16, 3, 10, 16, "#ff6a2b");
+    fillRect(ctx, 24, 7, 7, 8, "#e63b2e");
+    fillRect(ctx, 10, 8, 12, 7, "#fff6d8");
+    fillRect(ctx, 19, 9, 6, 5, "#ffd65d");
+    texture.refresh();
   }
 
   makeTreeTexture() {
@@ -2020,11 +2216,11 @@ class BrainworldScene extends Phaser.Scene {
     return new Phaser.Geom.Rectangle(x + insetX, y + insetY, Math.max(6, w - insetX * 2), Math.max(6, h - insetY * 2));
   }
 
-	  createMapNpcs() {
+  createMapNpcs() {
     this.mapNpcs = [
       { ...STRAWBERRY_NPC },
+      { ...DRAGON_NPC },
       ...this.rollNpcSpawns(),
-      { ...ADMIN_NPC, mapKey: "overworld" },
       ...SOUTH_VILLAGE_NPCS.map((npc) => ({ ...npc }))
     ];
     this.mapNpcs.forEach((npcData) => {
@@ -2042,6 +2238,7 @@ class BrainworldScene extends Phaser.Scene {
 	      npcData.wanderTarget = null;
 	      npcData.direction = "down";
 	      this.setNpcPosition(npcData, npcData.x, npcData.y);
+	      if (npcData.breathesFire) this.ensureDragonFireSprite(npcData);
 	      this.worldLayer.add(npc);
 	    });
 	  }
@@ -2123,6 +2320,65 @@ class BrainworldScene extends Phaser.Scene {
 	      if (npc.wanderTimer <= 0) this.tryStartNpcWander(npc);
 	    });
 	  }
+
+  ensureDragonFireSprite(npc) {
+    if (npc.fireSprite) return npc.fireSprite;
+    const fire = this.add.image(npc.x, npc.y, DRAGON_FIRE_KEY)
+      .setOrigin(0.05, 0.5)
+      .setScale(npc.fireScale ?? 1.45)
+      .setVisible(false)
+      .setDepth(Math.floor(npc.y) + 1);
+    this.worldLayer.add(fire);
+    npc.fireSprite = fire;
+    npc.nextFireAt = this.time.now + Phaser.Math.Between(900, 2200);
+    npc.fireUntil = 0;
+    return fire;
+  }
+
+  dragonFireOffset(direction) {
+    return {
+      up: { x: 0, y: -32, angle: -90, alpha: 0.45 },
+      down: { x: 0, y: -30, angle: 90, alpha: 1 },
+      left: { x: -46, y: -28, angle: 180, alpha: 1 },
+      right: { x: 46, y: -28, angle: 0, alpha: 1 }
+    }[direction] ?? { x: 0, y: -30, angle: 90, alpha: 1 };
+  }
+
+  updateDragonFire() {
+    if (!this.mapNpcs) return;
+    const now = this.time.now;
+    this.mapNpcs.forEach((npc) => {
+      if (!npc.breathesFire) return;
+      const fire = this.ensureDragonFireSprite(npc);
+      const active = this.isMapMode()
+        && !this.inBattle
+        && npc.mapKey === this.currentMapKey
+        && !npc.hiddenUntilSpawn
+        && npc.sprite?.visible;
+      if (!active) {
+        fire.setVisible(false);
+        return;
+      }
+      if (now >= (npc.nextFireAt ?? 0)) {
+        npc.fireUntil = now + Phaser.Math.Between(360, 620);
+        npc.nextFireAt = now + Phaser.Math.Between(1500, 3100);
+      }
+      if (now >= (npc.fireUntil ?? 0)) {
+        fire.setVisible(false);
+        return;
+      }
+      const direction = this.visualNpcDirection(npc.direction ?? "down", npc);
+      const offset = this.dragonFireOffset(direction);
+      const pulse = 1 + Math.sin(now / 70) * 0.12;
+      fire
+        .setVisible(true)
+        .setPosition(npc.x + offset.x, npc.y + offset.y)
+        .setAngle(offset.angle)
+        .setAlpha(offset.alpha)
+        .setScale((npc.fireScale ?? 1.45) * pulse)
+        .setDepth(Math.floor(npc.y) + 2);
+    });
+  }
 
 	  tryStartNpcWander(npc) {
 	    const options = [
@@ -2561,6 +2817,18 @@ class BrainworldScene extends Phaser.Scene {
     });
     this.eventCountdown.add([this.eventCountdownBg, this.eventCountdownText]);
 
+    this.strawberryEventTimer = this.add.container(18, 62).setScrollFactor(0).setDepth(3305).setVisible(false);
+    this.strawberryEventTimerBg = this.add.graphics();
+    this.strawberryEventTimerBg.fillStyle(0xffe0ec, 0.95).fillRoundedRect(0, 0, 178, 38, 5);
+    this.strawberryEventTimerBg.lineStyle(3, 0xb73359, 1).strokeRoundedRect(0, 0, 178, 38, 5);
+    this.strawberryEventTimerText = this.add.text(12, 8, "", {
+      fontFamily: "Courier New",
+      fontSize: "14px",
+      color: "#7b1f3a",
+      fontStyle: "bold"
+    });
+    this.strawberryEventTimer.add([this.strawberryEventTimerBg, this.strawberryEventTimerText]);
+
     this.eventBanner = this.add.container(VIEW_W / 2, 74).setScrollFactor(0).setDepth(8200).setVisible(false);
     this.eventBannerBg = this.add.graphics();
     this.eventBannerBg.fillStyle(0xfff3ba, 1).fillRoundedRect(-270, -36, 540, 72, 6);
@@ -2709,9 +2977,15 @@ class BrainworldScene extends Phaser.Scene {
     const visible = Boolean(this.strawberrySpawnActive && this.homeStarted && !this.inBattle);
     this.strawberrySpawnLayer?.setVisible(visible);
     this.strawberrySpawnTint?.setVisible(visible);
+    this.strawberryEventTimer?.setVisible(visible);
     if (!visible) return;
     const dt = deltaMs / 1000;
     const elapsed = Math.max(0, this.time.now - (this.strawberrySpawnStartedAt ?? this.time.now));
+    const remainingMs = Math.max(0, (this.strawberrySpawnEndsAt ?? this.time.now) - this.time.now);
+    const remainingSeconds = Math.ceil(remainingMs / 1000);
+    const minutes = Math.floor(remainingSeconds / 60);
+    const seconds = String(remainingSeconds % 60).padStart(2, "0");
+    this.strawberryEventTimerText?.setText(`STRAWBERRY ${minutes}:${seconds}`);
     const pulse = 0.2 + Math.sin(this.time.now / 85) * 0.06;
     this.strawberrySpawnTint?.setAlpha(pulse);
     const bounds = this.eventWorldBounds();
@@ -2750,6 +3024,7 @@ class BrainworldScene extends Phaser.Scene {
     this.strawberrySpawnEndsAt = 0;
     this.strawberrySpawnLayer?.setVisible(false);
     this.strawberrySpawnTint?.setVisible(false);
+    this.strawberryEventTimer?.setVisible(false);
   }
 
   despawnStrawberryMapEncounter(showMessage = false) {
@@ -3447,7 +3722,8 @@ class BrainworldScene extends Phaser.Scene {
     });
     this.adminLoginForm.addEventListener("pointerdown", (event) => event.stopPropagation());
     this.adminLoginForm.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" || event.key === "Backspace") {
+      const typingField = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target?.tagName) || event.target?.isContentEditable;
+      if (event.key === "Escape" || (event.key === "Backspace" && !typingField)) {
         event.preventDefault();
         this.hideAdminLogin();
       }
@@ -3820,6 +4096,7 @@ class BrainworldScene extends Phaser.Scene {
 	    }
 	    this.updateDoorPrompt();
 	    this.updateNpcWander(delta);
+	    this.updateDragonFire();
 	    this.movePlayer(delta / 1000);
 	  }
 
@@ -4107,6 +4384,7 @@ class BrainworldScene extends Phaser.Scene {
     }
     if (!this.isMapMode()) return true;
     if (px < 18 || py < 25 || px > this.mapWorldW - 18 || py > this.mapWorldH - 25) return true;
+    if (this.isDoorWalkableAt(px, py + 20)) return false;
     if (this.isTransitionWalkableAt(px, py + 20)) return false;
     if (this.blockedRects?.some((rect) => Phaser.Geom.Rectangle.Contains(rect, px, py + 20))) return true;
     if (this.blockedRects?.some((rect) => Phaser.Geom.Rectangle.Contains(rect, px - 12, py + 18))) return true;
@@ -4133,6 +4411,7 @@ class BrainworldScene extends Phaser.Scene {
 
 	  npcTerrainBlockedAt(x, y) {
 	    if (x < 18 || y < 25 || x > this.mapWorldW - 18 || y > this.mapWorldH - 25) return true;
+	    if (this.isDoorWalkableAt(x, y + 20)) return false;
 	    if (this.isTransitionWalkableAt(x, y + 20)) return false;
 	    if (this.blockedRects?.some((rect) => Phaser.Geom.Rectangle.Contains(rect, x, y + 20))) return true;
 	    if (this.blockedRects?.some((rect) => Phaser.Geom.Rectangle.Contains(rect, x - 12, y + 18))) return true;
@@ -4272,6 +4551,13 @@ class BrainworldScene extends Phaser.Scene {
     )) ?? false;
   }
 
+  isDoorWalkableAt(x, y) {
+    return this.doors?.some((door) => {
+      const padding = door.toMap ? 44 : 34;
+      return Phaser.Geom.Rectangle.Contains(this.expandedRect(door.rect, padding), x, y);
+    }) ?? false;
+  }
+
   findDoorAt(x, y, padding = 0) {
     return this.doors?.find((door) => Phaser.Geom.Rectangle.Contains(this.expandedRect(door.rect, padding), x, y));
   }
@@ -4324,11 +4610,12 @@ class BrainworldScene extends Phaser.Scene {
     if (npc.battleEnemyName) {
       this.moveTarget = null;
       npc.sprite?.anims?.stop();
+      npc.fireSprite?.setVisible(false);
       const battleOptions = npc.battleOptions
         ? { ...npc.battleOptions }
         : { enemyName: npc.battleEnemyName };
       battleOptions.introText = battleOptions.introText ?? `${npc.name} wants to battle!`;
-      this.despawnStrawberryMapEncounter(false);
+      if (npc.key === BLOCKY_STRAWBERRY_AVATAR_KEY) this.despawnStrawberryMapEncounter(false);
       this.startBattle(battleOptions);
       return;
     }
